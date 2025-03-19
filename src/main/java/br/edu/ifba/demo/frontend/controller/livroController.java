@@ -27,10 +27,10 @@ public class livroController {
         return mv;
     }
 
-    @GetMapping("/CadastroGenero")
+    @GetMapping("/cadastrodecontas")
     public ModelAndView index2() {
         ModelAndView mv = new ModelAndView();
-        mv.setViewName("form2");
+        mv.setViewName("cadastrodecontas");
         return mv;
     }
 }

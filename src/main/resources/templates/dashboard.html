@@ -29,6 +29,17 @@
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
     </style>
     <script>
         async function loadDashboard() {
@@ -68,6 +79,7 @@
                         </thead>
                         <tbody id="parcelas-${conta.idcontas}"></tbody>
                     </table>
+                    <button onclick="deleteConta(${conta.idcontas})">DELETAR</button>
                 `;
                 contasContainer.appendChild(contaDiv);
 
@@ -88,11 +100,35 @@
             });
         }
 
+        function deleteConta(id) {
+            fetch(`http://localhost:8081/contas/delete/${id}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao deletar a conta');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Conta deletada com sucesso:', data);
+                loadDashboard();  // Recarrega o dashboard após deletar
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+            });
+        }
+
+        function redirecionarParaCadastro() {
+            window.location.href = "cadastrodecontas";
+        }
+
         window.onload = loadDashboard;
     </script>
 </head>
 <body>
     <h2>Bem-vindo, <span id="userName"></span>!</h2>
+    <button class="btn" onclick="redirecionarParaCadastro()">Adicionar Conta</button>
     <div id="contasContainer"></div>
 </body>
 </html>
