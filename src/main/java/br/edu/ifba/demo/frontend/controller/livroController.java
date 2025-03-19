@@ -20,10 +20,10 @@ public class livroController {
         return mv;
     }
     
-    @GetMapping("/Cadastro")
+    @GetMapping("/dashboard")
     public ModelAndView index1() {
         ModelAndView mv = new ModelAndView();
-        mv.setViewName("form");
+        mv.setViewName("dashboard");
         return mv;
     }
 

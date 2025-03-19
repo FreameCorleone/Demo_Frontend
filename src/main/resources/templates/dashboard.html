@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 2rem;
+        }
+        h2 {
+            color: #333;
+        }
+        .user-info, .account-info, .parcel-info {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        async function loadDashboard() {
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (!user) {
+                alert("Usuário não autenticado!");
+                window.location.href = "index.html";
+                return;
+            }
+
+            document.getElementById("userName").textContent = user.nome;
+
+            // Buscar todas as contas do usuário
+            const contasResponse = await fetch(`http://localhost:8081/contas/buscarporidusuario/${user.idusuario}`);
+            const contas = await contasResponse.json();
+
+            const contasContainer = document.getElementById("contasContainer");
+            contasContainer.innerHTML = ""; // Limpa o conteúdo antes de adicionar novas contas
+
+            contas.forEach(async (conta) => {
+                // Criar um card para cada conta
+                const contaDiv = document.createElement("div");
+                contaDiv.classList.add("account-info");
+                contaDiv.innerHTML = `
+                    <h3>Conta</h3>
+                    <p><strong>Descrição:</strong> ${conta.descricao}</p>
+                    <p><strong>Valor:</strong> R$ ${conta.valor.toFixed(2)}</p>
+                    <p><strong>Tipo:</strong> ${conta.tipoconta}</p>
+                    <h4>Parcelas</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parcela</th>
+                                <th>Valor</th>
+                                <th>Data de Vencimento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parcelas-${conta.idcontas}"></tbody>
+                    </table>
+                `;
+                contasContainer.appendChild(contaDiv);
+
+                // Buscar parcelas da conta
+                const parcelasResponse = await fetch(`http://localhost:8081/parcela/buscarporconta/${conta.idcontas}`);
+                const parcelas = await parcelasResponse.json();
+
+                const parcelasList = document.getElementById(`parcelas-${conta.idcontas}`);
+                parcelas.forEach(parcela => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${parcela.numeroparcela}</td>
+                        <td>R$ ${parcela.valorparcela.toFixed(2)}</td>
+                        <td>${parcela.parceladatavencimento}</td>
+                    `;
+                    parcelasList.appendChild(row);
+                });
+            });
+        }
+
+        window.onload = loadDashboard;
+    </script>
+</head>
+<body>
+    <h2>Bem-vindo, <span id="userName"></span>!</h2>
+    <div id="contasContainer"></div>
+</body>
+</html>
