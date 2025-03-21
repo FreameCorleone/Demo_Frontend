@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Usuário</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .profile-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .profile-info {
+            text-align: left;
+            margin-top: 1rem;
+        }
+
+        .profile-info p {
+            margin: 0.5rem 0;
+        }
+
+        .profile-info label {
+            font-weight: bold;
+        }
+
+        .back-button {
+            margin-top: 1.5rem;
+            padding: 0.8rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h2>Perfil de Usuário</h2>
+        <div class="profile-info">
+            <p><label>Nome:</label> <span id="nome"></span></p>
+            <p><label>Login:</label> <span id="login"></span></p>
+            <p><label>Email:</label> <span id="email"></span></p>
+            <p><label>CPF:</label> <span id="cpf"></span></p>
+            <h3>Endereço</h3>
+            <p><label>Estado:</label> <span id="estado"></span></p>
+            <p><label>Cidade:</label> <span id="cidade"></span></p>
+            <p><label>Bairro:</label> <span id="bairro"></span></p>
+            <p><label>Rua:</label> <span id="rua"></span></p>
+            <p><label>Número:</label> <span id="numero"></span></p>
+            <p><label>CEP:</label> <span id="cep"></span></p>
+            <h3>Telefone</h3>
+            <p><label>Tipo:</label> <span id="tiponumero"></span></p>
+            <p><label>Telefone:</label> <span id="telefonenumero"></span></p>
+        </div>
+        <button class="back-button" onclick="window.location.href='/dashboard'">Voltar</button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('nome').textContent = user.nome;
+                document.getElementById('login').textContent = user.login;
+                document.getElementById('email').textContent = user.email;
+                document.getElementById('cpf').textContent = user.cpf;
+
+                document.getElementById('estado').textContent = user.idendereco.estado;
+                document.getElementById('cidade').textContent = user.idendereco.cidade;
+                document.getElementById('bairro').textContent = user.idendereco.bairro;
+                document.getElementById('rua').textContent = user.idendereco.rua;
+                document.getElementById('numero').textContent = user.idendereco.numero;
+                document.getElementById('cep').textContent = user.idendereco.cep;
+
+                document.getElementById('tiponumero').textContent = user.idtelefone.tiponumero;
+                document.getElementById('telefonenumero').textContent = user.idtelefone.telefonenumero;
+            } else {
+                alert("Usuário não encontrado, por favor faça login.");
+                window.location.href = "/login";
+            }
+        };
+    </script>
+</body>
+</html>

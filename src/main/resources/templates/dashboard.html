@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 2rem;
+      }
+      h2 {
+        color: #333;
+      }
+      .user-info,
+      .account-info,
+      .parcel-info {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 0.8rem;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      .btn {
+        background-color: #4caf50;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background-color: #45a049;
+      }
+    </style>
+    <script>
+      async function loadDashboard() {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          alert("Usuário não autenticado!");
+          window.location.href = "/";
+          return;
+        }
+
+        document.getElementById("userName").textContent = user.nome;
+
+        const contasResponse = await fetch(
+          `http://localhost:8081/contas/buscarporidusuario/${user.idusuario}`
+        );
+        const contas = await contasResponse.json();
+
+        const contasContainer = document.getElementById("contasContainer");
+        contasContainer.innerHTML = "";
+
+        contas.forEach(async (conta) => {
+          const contaDiv = document.createElement("div");
+          contaDiv.classList.add("account-info");
+          contaDiv.innerHTML = `
+                <h3>Conta</h3>
+                <p><strong>Descrição:</strong> ${conta.descricao}</p>
+                <p><strong>Valor:</strong> R$ ${conta.valor.toFixed(2)}</p>
+                <p><strong>Tipo:</strong> ${conta.tipoconta}</p>
+                <p><strong>Tipo:</strong> ${conta.idcategoria.tipo}</p>
+
+                <p><strong>Status Conta:</strong> ${conta.statuscontas ? 'Pago' : 'Pendente'}</p>
+
+                <p><strong>Data de vencimento:</strong> ${conta.datavencimento}</p>
+
+                <button onclick="deleteConta(${conta.idcontas})">DELETAR</button>
+                <button onclick="editarConta(${conta.idcontas})">EDITAR</button>
+                <button onclick="visualizarConta(${
+                  conta.idcontas
+                })">VISUALIZAR</button>
+                
+
+                <h4>Parcelas</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parcela</th>
+                            <th>Valor</th>
+                            <th>Data de Vencimento</th>
+                            <th>Status do pagamento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parcelas-${conta.idcontas}"></tbody>
+                </table>
+                
+            `;
+          contasContainer.appendChild(contaDiv);
+
+          const parcelasResponse = await fetch(
+            `http://localhost:8081/parcela/buscarporconta/${conta.idcontas}`
+          );
+          const parcelas = await parcelasResponse.json();
+
+          const parcelasList = document.getElementById(
+            `parcelas-${conta.idcontas}`
+          );
+          parcelas.forEach((parcela) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+    <td>${parcela.numeroparcela}</td>
+    <td>R$ ${parcela.valorparcela.toFixed(2)}</td>
+    <td>${parcela.parceladatavencimento}</td>
+    <td>${parcela.status_parcela}</td>
+    <td>
+        <button class="btn" onclick="deleteParcela(${parcela.idparcela})">Deletar</button>
+        <button class="btn" onclick="updateParcela(${parcela.idparcela})">Atualizar</button>
+        <button class="btn" onclick="pagarParcela(${parcela.idparcela})">
+            ${parcela.status_parcela === 'PAGO' ? 'Marcar como Pendente' : 'Marcar como Pago'}
+        </button>
+    </td>
+`;
+            parcelasList.appendChild(row);
+          });
+        });
+      }
+
+      function logoff() {
+        localStorage.removeItem("user");
+        window.location.href = "/";
+      }
+
+      function perfil() {
+        window.location.href = "perfil";
+      }
+
+
+      function deleteConta(id) {
+        fetch(`http://localhost:8081/contas/delete/${id}`, {
+          method: "DELETE",
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Erro ao deletar a conta");
+            }
+            return response.text();
+          })
+          .then(() => {
+            console.log("Conta deletada com sucesso");
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error("Erro:", error);
+            alert("Erro ao deletar a conta!");
+          });
+      }
+
+      function redirecionarParaCadastro() {
+        window.location.href = "cadastrodecontas";
+      }
+
+      function visualizarConta(id) {
+        window.location.href = `cadastrodecontas?id=${id}&modo=visualizar`;
+      }
+
+      function editarConta(id) {
+        window.location.href = `cadastrodecontas?id=${id}&modo=editar`;
+      }
+
+
+
+      async function deleteParcela(id) {
+            await fetch(`http://localhost:8081/parcela/delete/${id}`, { method: "DELETE" });
+            window.location.reload();
+        }
+
+        async function updateParcela(id) {
+    const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
+    const parcela = await parcelaResponse.json();
+
+    const novaDataVencimento = prompt("Digite a nova data de vencimento:", parcela.parceladatavencimento);
+    const novoNumeroParcela = prompt("Digite o novo número da parcela:", parcela.numeroparcela);
+    const novoValorParcela = prompt("Digite o novo valor da parcela:", parcela.valorparcela);
+
+    parcela.parceladatavencimento = novaDataVencimento;
+    parcela.numeroparcela = novoNumeroParcela;
+    parcela.valorparcela = novoValorParcela;
+
+    await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parcela)
+    });
+
+    // Atualiza a página
+    window.location.reload();
+}
+
+
+
+        async function pagarParcela(id) {
+    try {
+        const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
+        if (!parcelaResponse.ok) {
+            throw new Error("Erro ao buscar a parcela.");
+        }
+        const parcela = await parcelaResponse.json();
+
+        if (parcela.status_parcela === "PAGO") {
+            parcela.status_parcela = "PENDENTE";
+        } else {
+            parcela.status_parcela = "PAGO";
+        }
+
+        const response = await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parcela)
+        });
+
+        if (!response.ok) {
+            throw new Error("Erro ao atualizar parcela.");
+        }
+
+        console.log(`Parcela ${id} atualizada para ${parcela.status_parcela}.`);
+        window.location.reload();
+    } catch (error) {
+        console.error("Erro ao atualizar parcela:", error);
+    }
+}
+
+
+
+      window.onload = loadDashboard;
+    </script>
+  </head>
+  <body>
+    <button class="btn" onclick="logoff()">Logoff</button>
+    <button class="btn" onclick="perfil()">Ver Perfil</button>
+
+    <h2>Bem-vindo, <span id="userName"></span>!</h2>
+    <button class="btn" onclick="redirecionarParaCadastro()">
+      Adicionar Conta
+    </button>
+    <div id="contasContainer"></div>
+  </body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Contas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: auto;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get("id");
+            const modo = params.get("modo");
+
+            async function carregarCategorias() {
+                try {
+                    const response = await fetch("http://localhost:8081/categoria/listall");
+                    if (!response.ok) throw new Error("Erro ao carregar categorias");
+
+                    const categorias = await response.json();
+                    const selectCategoria = document.getElementById("idcategoria");
+
+                    selectCategoria.innerHTML = "";
+
+                    categorias.forEach(categoria => {
+                        const option = document.createElement("option");
+                        option.value = categoria.idcategoria;
+                        option.textContent = categoria.categoriadescricao;
+                        selectCategoria.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error("Erro ao buscar categorias:", error);
+                }
+            }
+
+            if (id) {
+                async function carregarContaPorId() {
+                    try {
+                        const response = await fetch(`http://localhost:8081/contas/buscarporid/${id}`);
+                        if (!response.ok) throw new Error("Erro ao buscar conta");
+
+                        const conta = await response.json();
+
+                        document.getElementById("descricao").value = conta.descricao;
+                        document.getElementById("valor").value = conta.valor;
+                        document.getElementById("datavencimento").value = conta.datavencimento;
+                        document.getElementById("datapagamento").value = conta.datapagamento || "";
+                        document.getElementById("tipoconta").value = conta.tipoconta;
+                        document.getElementById("statuscontas").value = conta.statuscontas ? "true" : "false";
+
+                        const selectCategoria = document.getElementById("idcategoria");
+                        const option = document.createElement("option");
+                        option.value = conta.idcategoria.idcategoria;
+                        option.textContent = conta.idcategoria.categoriadescricao;
+                        selectCategoria.innerHTML = "";
+                        selectCategoria.appendChild(option);
+
+                        if (modo === "visualizar") {
+                            document.querySelectorAll("input, select").forEach(el => el.disabled = true);
+                            document.getElementById("btn-cadastrar").style.display = "none";
+                        } else if (modo === "editar") {
+                            document.getElementById("btn-cadastrar").textContent = "Atualizar Conta";
+                        }
+                    } catch (error) {
+                        console.error("Erro ao carregar a conta:", error);
+                    }
+                }
+
+                carregarContaPorId();
+            }
+
+            async function salvarOuAtualizarConta(event) {
+                event.preventDefault();
+
+                const descricao = document.getElementById("descricao").value;
+                const valor = parseFloat(document.getElementById("valor").value);
+                const datavencimento = document.getElementById("datavencimento").value;
+                const datapagamento = document.getElementById("datapagamento").value;
+                const tipoconta = document.getElementById("tipoconta").value;
+                const statuscontas = document.getElementById("statuscontas").value === "true";
+                const idusuario = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).idusuario : 1;
+                const idcategoria = document.getElementById("idcategoria").value;
+                const parcelas = parseInt(document.getElementById("parcelas").value);
+
+                const contaData = {
+                    descricao,
+                    valor,
+                    datavencimento,
+                    datapagamento,
+                    tipoconta,
+                    statuscontas,
+                    idusuario,
+                    idcategoria
+                };
+
+                try {
+                    let url = "http://localhost:8081/contas/salvar";
+                    let method = "POST";
+
+                    if (modo === "editar") {
+                        url = `http://localhost:8081/contas/atualizar/${id}`;
+                        method = "PUT";
+                    }
+
+                    const response = await fetch(url, {
+                        method,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(contaData)
+                    });
+
+                    if (!response.ok) throw new Error("Erro ao processar a conta.");
+
+                    const conta = await response.json();
+                    alert(modo === "editar" ? "Conta atualizada com sucesso!" : "Conta cadastrada com sucesso!");
+
+                    if (parcelas > 1) {
+                        for (let i = 1; i <= parcelas; i++) {
+                            const parcelaData = {
+                                parceladatavencimento: calcularVencimento(datavencimento, i),
+                                numeroparcela: i,
+                                valorparcela: (valor / parcelas).toFixed(2),
+                                idcontas: { idcontas: conta.idcontas },
+                                status_parcela: "Pendente"
+                            };
+
+                            await fetch("http://localhost:8081/parcela/salvar", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(parcelaData)
+                            });
+                        }
+                        alert("Parcelas cadastradas com sucesso!");
+                    }
+
+                    window.location.href = "dashboard";
+                } catch (error) {
+                    alert("Erro ao processar a conta: " + error.message);
+                }
+            }
+
+
+            
+
+            document.getElementById("form-conta").addEventListener("submit", salvarOuAtualizarConta);
+            carregarCategorias();
+        });
+
+        function calcularVencimento(dataBase, parcela) {
+            let data = new Date(dataBase);
+            data.setMonth(data.getMonth() + parcela);
+            return data.toISOString().split("T")[0];
+        }
+
+       
+    </script>
+</head>
+<body>
+    <h2>Cadastro de Conta</h2>
+    <div class="container">
+        <form id="form-conta">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao" required>
+
+            <label for="valor">Valor:</label>
+            <input type="number" id="valor" step="0.01" required>
+
+            <label for="datavencimento">Data de Vencimento:</label>
+            <input type="date" id="datavencimento" required>
+
+            <label for="datapagamento">Data de Pagamento:</label>
+            <input type="date" id="datapagamento">
+
+            
+
+            <label for="tipoconta">Tipo de Conta:</label>
+            <select id="tipoconta">
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Boleto">Boleto</option>
+                <option value="Débito">Débito</option>
+            </select>
+
+            <label for="statuscontas">Status:</label>
+            <select id="statuscontas">
+                <option value="true">Paga</option>
+                <option value="false">Pendente</option>
+            </select>
+
+            <label for="idcategoria">Categoria:</label>
+            <select id="idcategoria">
+                <option>Carregando categorias...</option>
+            </select>
+
+            <label for="parcelas">Parcelamento:</label>
+            <select id="parcelas">
+                <option value="1">À vista (1x)</option>
+                <option value="2">2x</option>
+                <option value="3">3x</option>
+                <option value="4">4x</option>
+                <option value="5">5x</option>
+                <option value="6">6x</option>
+                <option value="7">7x</option>
+                <option value="8">8x</option>
+                <option value="9">9x</option>
+                <option value="10">10x</option>
+                <option value="11">11x</option>
+                <option value="12">12x</option>
+            </select>
+
+            <button id="btn-cadastrar" type="submit">Cadastrar Conta</button>
+        </form>
+    </div>
+</body>
+</html>
+``
