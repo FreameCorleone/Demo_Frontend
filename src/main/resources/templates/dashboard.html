@@ -55,17 +55,15 @@
 
         document.getElementById("userName").textContent = user.nome;
 
-        // Buscar todas as contas do usuário
         const contasResponse = await fetch(
           `http://localhost:8081/contas/buscarporidusuario/${user.idusuario}`
         );
         const contas = await contasResponse.json();
 
         const contasContainer = document.getElementById("contasContainer");
-        contasContainer.innerHTML = ""; // Limpa o conteúdo antes de adicionar novas contas
+        contasContainer.innerHTML = "";
 
         contas.forEach(async (conta) => {
-          // Criar um card para cada conta
           const contaDiv = document.createElement("div");
           contaDiv.classList.add("account-info");
           contaDiv.innerHTML = `
@@ -73,6 +71,8 @@
                 <p><strong>Descrição:</strong> ${conta.descricao}</p>
                 <p><strong>Valor:</strong> R$ ${conta.valor.toFixed(2)}</p>
                 <p><strong>Tipo:</strong> ${conta.tipoconta}</p>
+                <p><strong>Tipo:</strong> ${conta.idcategoria.tipo}</p>
+
                 <p><strong>Status Conta:</strong> ${conta.statuscontas ? 'Pago' : 'Pendente'}</p>
 
                 <p><strong>Data de vencimento:</strong> ${conta.datavencimento}</p>
@@ -100,7 +100,6 @@
             `;
           contasContainer.appendChild(contaDiv);
 
-          // Buscar parcelas da conta
           const parcelasResponse = await fetch(
             `http://localhost:8081/parcela/buscarporconta/${conta.idcontas}`
           );
@@ -130,16 +129,15 @@
       }
 
       function logoff() {
-        localStorage.removeItem("user"); // Limpar o localStorage
-        window.location.href = "/"; // Redireciona para a página inicial
+        localStorage.removeItem("user");
+        window.location.href = "/";
       }
 
       function perfil() {
-        window.location.href = "perfil"; // Redireciona para a página de perfil
+        window.location.href = "perfil";
       }
 
 
-      // Mova a função deleteConta para o escopo global
       function deleteConta(id) {
         fetch(`http://localhost:8081/contas/delete/${id}`, {
           method: "DELETE",
@@ -148,15 +146,15 @@
             if (!response.ok) {
               throw new Error("Erro ao deletar a conta");
             }
-            return response.text(); // Evita erro se a resposta não for JSON
+            return response.text();
           })
           .then(() => {
             console.log("Conta deletada com sucesso");
-            window.location.reload(); // Recarrega a página
+            window.location.reload();
           })
           .catch((error) => {
             console.error("Erro:", error);
-            alert("Erro ao deletar a conta!"); // Exibe um alerta para o usuário
+            alert("Erro ao deletar a conta!");
           });
       }
 
@@ -180,21 +178,17 @@
         }
 
         async function updateParcela(id) {
-    // Buscar a parcela pelo id
     const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
     const parcela = await parcelaResponse.json();
 
-    // Permitir que o usuário edite os campos
     const novaDataVencimento = prompt("Digite a nova data de vencimento:", parcela.parceladatavencimento);
     const novoNumeroParcela = prompt("Digite o novo número da parcela:", parcela.numeroparcela);
     const novoValorParcela = prompt("Digite o novo valor da parcela:", parcela.valorparcela);
 
-    // Atualiza a parcela com as novas informações
     parcela.parceladatavencimento = novaDataVencimento;
     parcela.numeroparcela = novoNumeroParcela;
     parcela.valorparcela = novoValorParcela;
 
-    // Envia a atualização para o backend
     await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -209,21 +203,18 @@
 
         async function pagarParcela(id) {
     try {
-        // Buscar os dados completos da parcela
         const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
         if (!parcelaResponse.ok) {
             throw new Error("Erro ao buscar a parcela.");
         }
         const parcela = await parcelaResponse.json();
 
-        // Alterna entre "Pagar" e "Pendente"
         if (parcela.status_parcela === "PAGO") {
             parcela.status_parcela = "PENDENTE";
         } else {
             parcela.status_parcela = "PAGO";
         }
 
-        // Enviar os dados completos da parcela atualizados
         const response = await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

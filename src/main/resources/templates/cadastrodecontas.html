@@ -45,7 +45,7 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const params = new URLSearchParams(window.location.search);
             const id = params.get("id");
-            const modo = params.get("modo"); // "visualizar" ou "editar"
+            const modo = params.get("modo");
 
             async function carregarCategorias() {
                 try {
@@ -55,7 +55,7 @@
                     const categorias = await response.json();
                     const selectCategoria = document.getElementById("idcategoria");
 
-                    selectCategoria.innerHTML = ""; // Limpa o select
+                    selectCategoria.innerHTML = "";
 
                     categorias.forEach(categoria => {
                         const option = document.createElement("option");
@@ -148,7 +148,6 @@
                     const conta = await response.json();
                     alert(modo === "editar" ? "Conta atualizada com sucesso!" : "Conta cadastrada com sucesso!");
 
-                    // Se for parcelado, cadastra as parcelas
                     if (parcelas > 1) {
                         for (let i = 1; i <= parcelas; i++) {
                             const parcelaData = {
@@ -168,7 +167,7 @@
                         alert("Parcelas cadastradas com sucesso!");
                     }
 
-                    window.location.href = "dashboard"; // Redireciona após cadastrar
+                    window.location.href = "dashboard";
                 } catch (error) {
                     alert("Erro ao processar a conta: " + error.message);
                 }
@@ -184,7 +183,7 @@
         function calcularVencimento(dataBase, parcela) {
             let data = new Date(dataBase);
             data.setMonth(data.getMonth() + parcela);
-            return data.toISOString().split("T")[0]; // Retorna no formato YYYY-MM-DD
+            return data.toISOString().split("T")[0];
         }
 
        
