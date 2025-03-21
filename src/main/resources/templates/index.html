@@ -78,8 +78,13 @@
                 alert("Erro ao conectar ao servidor: " + error.message);
             }
 
+           
             
         }
+
+    function cadastro() {
+        window.location.href = "/cadastro";
+    }
     </script>
 </head>
 <body>
@@ -89,7 +94,9 @@
             <input type="text" id="username" placeholder="Usuário" required>
             <input type="password" id="password" placeholder="Senha" required>
             <button type="submit">Entrar</button>
+            
         </form>
+        <button onclick="cadastro()">FAZER CADASTRO</button>
     </div>
 </body>
 </html>

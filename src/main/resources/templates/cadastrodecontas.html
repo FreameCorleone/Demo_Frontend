@@ -155,7 +155,8 @@
                                 parceladatavencimento: calcularVencimento(datavencimento, i),
                                 numeroparcela: i,
                                 valorparcela: (valor / parcelas).toFixed(2),
-                                idcontas: { idcontas: conta.idcontas }
+                                idcontas: { idcontas: conta.idcontas },
+                                status_parcela: "Pendente"
                             };
 
                             await fetch("http://localhost:8081/parcela/salvar", {
@@ -172,6 +173,9 @@
                     alert("Erro ao processar a conta: " + error.message);
                 }
             }
+
+
+            
 
             document.getElementById("form-conta").addEventListener("submit", salvarOuAtualizarConta);
             carregarCategorias();
@@ -201,6 +205,8 @@
 
             <label for="datapagamento">Data de Pagamento:</label>
             <input type="date" id="datapagamento">
+
+            
 
             <label for="tipoconta">Tipo de Conta:</label>
             <select id="tipoconta">

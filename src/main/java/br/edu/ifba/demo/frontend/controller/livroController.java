@@ -33,4 +33,18 @@ public class livroController {
         mv.setViewName("cadastrodecontas");
         return mv;
     }
+
+    @GetMapping("/perfil")
+    public ModelAndView index3() {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("perfil");
+        return mv;
+    }
+
+    @GetMapping("/cadastro")
+    public ModelAndView index4() {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("cadastro");
+        return mv;
+    }
 }

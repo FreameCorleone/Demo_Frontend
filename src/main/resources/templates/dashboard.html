@@ -49,7 +49,7 @@
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user) {
           alert("Usuário não autenticado!");
-          window.location.href = "index.html";
+          window.location.href = "/";
           return;
         }
 
@@ -75,6 +75,7 @@
                 <p><strong>Tipo:</strong> ${conta.tipoconta}</p>
                 <p><strong>Status Conta:</strong> ${conta.statuscontas ? 'Pago' : 'Pendente'}</p>
 
+                <p><strong>Data de vencimento:</strong> ${conta.datavencimento}</p>
 
                 <button onclick="deleteConta(${conta.idcontas})">DELETAR</button>
                 <button onclick="editarConta(${conta.idcontas})">EDITAR</button>
@@ -111,15 +112,32 @@
           parcelas.forEach((parcela) => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                    <td>${parcela.numeroparcela}</td>
-                    <td>R$ ${parcela.valorparcela.toFixed(2)}</td>
-                    <td>${parcela.parceladatavencimento}</td>
-                    <td>${parcela.status_parcela}</td>
-                `;
+    <td>${parcela.numeroparcela}</td>
+    <td>R$ ${parcela.valorparcela.toFixed(2)}</td>
+    <td>${parcela.parceladatavencimento}</td>
+    <td>${parcela.status_parcela}</td>
+    <td>
+        <button class="btn" onclick="deleteParcela(${parcela.idparcela})">Deletar</button>
+        <button class="btn" onclick="updateParcela(${parcela.idparcela})">Atualizar</button>
+        <button class="btn" onclick="pagarParcela(${parcela.idparcela})">
+            ${parcela.status_parcela === 'PAGO' ? 'Marcar como Pendente' : 'Marcar como Pago'}
+        </button>
+    </td>
+`;
             parcelasList.appendChild(row);
           });
         });
       }
+
+      function logoff() {
+        localStorage.removeItem("user"); // Limpar o localStorage
+        window.location.href = "/"; // Redireciona para a página inicial
+      }
+
+      function perfil() {
+        window.location.href = "perfil"; // Redireciona para a página de perfil
+      }
+
 
       // Mova a função deleteConta para o escopo global
       function deleteConta(id) {
@@ -154,11 +172,84 @@
         window.location.href = `cadastrodecontas?id=${id}&modo=editar`;
       }
 
+
+
+      async function deleteParcela(id) {
+            await fetch(`http://localhost:8081/parcela/delete/${id}`, { method: "DELETE" });
+            window.location.reload();
+        }
+
+        async function updateParcela(id) {
+    // Buscar a parcela pelo id
+    const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
+    const parcela = await parcelaResponse.json();
+
+    // Permitir que o usuário edite os campos
+    const novaDataVencimento = prompt("Digite a nova data de vencimento:", parcela.parceladatavencimento);
+    const novoNumeroParcela = prompt("Digite o novo número da parcela:", parcela.numeroparcela);
+    const novoValorParcela = prompt("Digite o novo valor da parcela:", parcela.valorparcela);
+
+    // Atualiza a parcela com as novas informações
+    parcela.parceladatavencimento = novaDataVencimento;
+    parcela.numeroparcela = novoNumeroParcela;
+    parcela.valorparcela = novoValorParcela;
+
+    // Envia a atualização para o backend
+    await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parcela)
+    });
+
+    // Atualiza a página
+    window.location.reload();
+}
+
+
+
+        async function pagarParcela(id) {
+    try {
+        // Buscar os dados completos da parcela
+        const parcelaResponse = await fetch(`http://localhost:8081/parcela/buscarporid/${id}`);
+        if (!parcelaResponse.ok) {
+            throw new Error("Erro ao buscar a parcela.");
+        }
+        const parcela = await parcelaResponse.json();
+
+        // Alterna entre "Pagar" e "Pendente"
+        if (parcela.status_parcela === "PAGO") {
+            parcela.status_parcela = "PENDENTE";
+        } else {
+            parcela.status_parcela = "PAGO";
+        }
+
+        // Enviar os dados completos da parcela atualizados
+        const response = await fetch(`http://localhost:8081/parcela/atualizar/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parcela)
+        });
+
+        if (!response.ok) {
+            throw new Error("Erro ao atualizar parcela.");
+        }
+
+        console.log(`Parcela ${id} atualizada para ${parcela.status_parcela}.`);
+        window.location.reload();
+    } catch (error) {
+        console.error("Erro ao atualizar parcela:", error);
+    }
+}
+
+
+
       window.onload = loadDashboard;
     </script>
   </head>
   <body>
-    
+    <button class="btn" onclick="logoff()">Logoff</button>
+    <button class="btn" onclick="perfil()">Ver Perfil</button>
+
     <h2>Bem-vindo, <span id="userName"></span>!</h2>
     <button class="btn" onclick="redirecionarParaCadastro()">
       Adicionar Conta
